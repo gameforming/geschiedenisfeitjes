@@ -18,16 +18,16 @@
     .container {
       margin-top: 40px;
       width: 90%;
-      max-width: 600px;
+      max-width: 650px;
       text-align: center;
     }
     h1 { margin-bottom: 10px; font-size: 2em; }
     .gulden { margin-bottom: 20px; font-size: 1.2em; }
-    .crates { display: flex; justify-content: space-around; margin-bottom: 30px; }
-    .crate { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 15px; cursor: pointer; transition: transform 0.15s; }
+    .crates { display: flex; justify-content: space-around; margin-bottom: 30px; gap: 10px; }
+    .crate { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 15px; cursor: pointer; transition: transform 0.15s; width: 30%; }
     .crate:hover { transform: translateY(-3px); }
-    .characters { display: grid; grid-template-columns: repeat(auto-fit,minmax(100px,1fr)); gap: 15px; }
-    .character { background: rgba(255,255,255,0.1); border-radius: 15px; padding: 10px; }
+    .units { display: flex; flex-direction: column; gap: 10px; }
+    .unit { background: rgba(255,255,255,0.12); border-radius: 15px; padding: 12px; display: flex; justify-content: space-between; }
     .back { display: block; margin-top: 30px; text-decoration: none; color: white; opacity: 0.9; }
   </style>
 </head>
@@ -38,74 +38,96 @@
   <div class="gulden">💰 Gulden: <span id="guldenDisplay">0</span></div>
 
   <div class="crates">
-    <div class="crate" onclick="buyCrate('houten')">🟤 Houten crate - 100 Gulden</div>
-    <div class="crate" onclick="buyCrate('zilveren')">🟦 Zilveren crate - 300 Gulden</div>
-    <div class="crate" onclick="buyCrate('gouden')">🟨 Gouden crate - 700 Gulden</div>
+    <div class="crate" onclick="buyCrate('houten')">🟤 Houten crate<br>100 Gulden</div>
+    <div class="crate" onclick="buyCrate('zilveren')">🟦 Zilveren crate<br>300 Gulden</div>
+    <div class="crate" onclick="buyCrate('gouden')">🟨 Gouden crate<br>700 Gulden</div>
   </div>
 
-  <div class="characters" id="characterContainer"></div>
+  <div class="units" id="unitContainer"></div>
   <a class="back" href="index.html">⬅ Terug naar home</a>
 </div>
 
 <script>
-// Gulden opslaan en ophalen
+// ===== BASIS DATA =====
 let gulden = localStorage.getItem('gulden') ? parseInt(localStorage.getItem('gulden')) : 0;
 document.getElementById('guldenDisplay').innerText = gulden;
 
-// Verzamelingen opslaan
-let verzameling = JSON.parse(localStorage.getItem('verzameling')) || [];
+// Units stacken per naam
+let units = JSON.parse(localStorage.getItem('units')) || {};
 
-// Characters database (makkelijk aan te passen)
-const charactersList = [
-  {name: 'Julius Caesar', rarity: 'Rare', funfact: 'Romeinse dictator'},
-  {name: 'Cleopatra', rarity: 'Epic', funfact: 'Laatste farao van Egypte'},
-  {name: 'Einstein', rarity: 'Legendary', funfact: 'Bedenker van relativiteitstheorie'},
-  {name: 'Napoleon', rarity: 'Epic', funfact: 'Keizer van Frankrijk'},
-  {name: 'Willem van Oranje', rarity: 'Rare', funfact: 'Vader van het Nederlandse koninkrijk'}
+// Zeldzaamheids-volgorde (voor sorteren)
+const rarityOrder = ['Legendary', 'Epic', 'Rare', 'Common'];
+
+// Units database (HEEL MAKKELIJK UIT TE BREIDEN)
+const unitList = [
+  { name: 'Roman Soldier', rarity: 'Common', chance: 40 },
+  { name: 'Greek Hoplite', rarity: 'Common', chance: 30 },
+  { name: 'Roman Centurion', rarity: 'Rare', chance: 15 },
+  { name: 'Spartan Warrior', rarity: 'Epic', chance: 10 },
+  { name: 'greek philosopher', rarity: 'Legendary', chance: 5 }
 ];
 
-// Crates en wat ze bevatten
+// Crates (kies welke units erin kunnen zitten)
 const crates = {
-  houten: {price:100, rarities:['Rare','Common','Common']},
-  zilveren: {price:300, rarities:['Epic','Rare','Rare','Common']},
-  gouden: {price:700, rarities:['Legendary','Epic','Rare','Rare','Common']}
+  houten: { price: 100, pool: ['Common'] },
+  zilveren: { price: 300, pool: ['Common','Rare','Rare'] },
+  gouden: { price: 700, pool: ['Rare','Epic','Epic','Legendary'] }
 };
 
+// ===== FUNCTIES =====
 function buyCrate(type){
   const crate = crates[type];
   if(gulden < crate.price){
-    alert('❌ Niet genoeg gulden!');
+    alert('❌ Niet genoeg gulden');
     return;
   }
+
   gulden -= crate.price;
   localStorage.setItem('gulden', gulden);
   document.getElementById('guldenDisplay').innerText = gulden;
 
-  // Random character uit crate
-  const rarity = crate.rarities[Math.floor(Math.random()*crate.rarities.length)];
-  const candidates = charactersList.filter(c => c.rarity === rarity);
-  const character = candidates[Math.floor(Math.random()*candidates.length)];
-  verzameling.push(character);
-  localStorage.setItem('verzameling', JSON.stringify(verzameling));
+  // Kies rarity uit crate
+  const rarity = crate.pool[Math.floor(Math.random()*crate.pool.length)];
+  const candidates = unitList.filter(u => u.rarity === rarity);
 
-  displayCharacters();
-  alert(`🎉 Je kreeg: ${character.name} (${character.rarity})`);
+  // Kansberekening (percentage)
+  const roll = Math.random() * 100;
+  let total = 0;
+  let unit = candidates[0];
+  for(const u of candidates){
+    total += u.chance;
+    if(roll <= total){ unit = u; break; }
+  }
+
+  // Stacken
+  if(!units[unit.name]){
+    units[unit.name] = { count: 0, rarity: unit.rarity, chance: unit.chance };
+  }
+  units[unit.name].count++;
+
+  localStorage.setItem('units', JSON.stringify(units));
+  renderUnits();
+
+  alert(`🎉 Je kreeg: ${unit.name} (${unit.rarity})`);
 }
 
-function displayCharacters(){
-  const container = document.getElementById('characterContainer');
+function renderUnits(){
+  const container = document.getElementById('unitContainer');
   container.innerHTML = '';
-  verzameling.forEach(c => {
+
+  const sorted = Object.entries(units).sort((a,b) =>
+    rarityOrder.indexOf(a[1].rarity) - rarityOrder.indexOf(b[1].rarity)
+  );
+
+  for(const [name,data] of sorted){
     const div = document.createElement('div');
-    div.className = 'character';
-    div.title = c.funfact;
-    div.innerText = `${c.name} (${c.rarity})`;
+    div.className = 'unit';
+    div.innerHTML = `<strong>${name}</strong> ${data.rarity} ${data.chance}% ×${data.count}`;
     container.appendChild(div);
-  });
+  }
 }
 
-// Init
-displayCharacters();
+renderUnits();
 </script>
 
 </body>
