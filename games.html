@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Games – Geschiedenis Collectors</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #42275a, #734b6d);
+      color: white;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      border-radius: 25px;
+      padding: 40px;
+      width: 90%;
+      max-width: 520px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 2.1em;
+    }
+
+    p {
+      margin-bottom: 30px;
+      opacity: 0.9;
+    }
+
+    .buttons {
+      display: grid;
+      gap: 18px;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .btn {
+      padding: 18px;
+      font-size: 1.15em;
+      border-radius: 18px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, #ffdd00, #ff9f00);
+      color: #333;
+      font-weight: bold;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 25px rgba(0,0,0,0.35);
+    }
+
+    .back {
+      display: block;
+      margin-top: 30px;
+      text-decoration: none;
+      color: white;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🎮 Games</h1>
+    <p>Speel mini-games en verdien gulden</p>
+
+    <div class="buttons">
+      <a href="quiz.html"><button class="btn">🧠 Quiz</button></a>
+      <a href="timeline.html"><button class="btn">⏱️ Tijdlijn</button></a>
+      <a href="guess.html"><button class="btn">🏛️ Raad het Tijdperk</button></a>
+    </div>
+
+    <a class="back" href="index.html">⬅ Terug naar home</a>
+  </div>
+
+</body>
+</html>
