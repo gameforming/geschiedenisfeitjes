@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Mijn Verzameling – Geschiedenis Collectors</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(135deg, #0f2027, #2c5364);
+      color: white;
+    }
+    .container {
+      margin-top: 40px;
+      width: 90%;
+      max-width: 600px;
+      text-align: center;
+    }
+    h1 { margin-bottom: 10px; font-size: 2em; }
+    .gulden { margin-bottom: 20px; font-size: 1.2em; }
+    .crates { display: flex; justify-content: space-around; margin-bottom: 30px; }
+    .crate { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 15px; cursor: pointer; transition: transform 0.15s; }
+    .crate:hover { transform: translateY(-3px); }
+    .characters { display: grid; grid-template-columns: repeat(auto-fit,minmax(100px,1fr)); gap: 15px; }
+    .character { background: rgba(255,255,255,0.1); border-radius: 15px; padding: 10px; }
+    .back { display: block; margin-top: 30px; text-decoration: none; color: white; opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📦 Mijn Verzameling</h1>
+  <div class="gulden">💰 Gulden: <span id="guldenDisplay">0</span></div>
+
+  <div class="crates">
+    <div class="crate" onclick="buyCrate('houten')">🟤 Houten crate - 100 Gulden</div>
+    <div class="crate" onclick="buyCrate('zilveren')">🟦 Zilveren crate - 300 Gulden</div>
+    <div class="crate" onclick="buyCrate('gouden')">🟨 Gouden crate - 700 Gulden</div>
+  </div>
+
+  <div class="characters" id="characterContainer"></div>
+  <a class="back" href="index.html">⬅ Terug naar home</a>
+</div>
+
+<script>
+// Gulden opslaan en ophalen
+let gulden = localStorage.getItem('gulden') ? parseInt(localStorage.getItem('gulden')) : 0;
+document.getElementById('guldenDisplay').innerText = gulden;
+
+// Verzamelingen opslaan
+let verzameling = JSON.parse(localStorage.getItem('verzameling')) || [];
+
+// Characters database (makkelijk aan te passen)
+const charactersList = [
+  {name: 'Julius Caesar', rarity: 'Rare', funfact: 'Romeinse dictator'},
+  {name: 'Cleopatra', rarity: 'Epic', funfact: 'Laatste farao van Egypte'},
+  {name: 'Einstein', rarity: 'Legendary', funfact: 'Bedenker van relativiteitstheorie'},
+  {name: 'Napoleon', rarity: 'Epic', funfact: 'Keizer van Frankrijk'},
+  {name: 'Willem van Oranje', rarity: 'Rare', funfact: 'Vader van het Nederlandse koninkrijk'}
+];
+
+// Crates en wat ze bevatten
+const crates = {
+  houten: {price:100, rarities:['Rare','Common','Common']},
+  zilveren: {price:300, rarities:['Epic','Rare','Rare','Common']},
+  gouden: {price:700, rarities:['Legendary','Epic','Rare','Rare','Common']}
+};
+
+function buyCrate(type){
+  const crate = crates[type];
+  if(gulden < crate.price){
+    alert('❌ Niet genoeg gulden!');
+    return;
+  }
+  gulden -= crate.price;
+  localStorage.setItem('gulden', gulden);
+  document.getElementById('guldenDisplay').innerText = gulden;
+
+  // Random character uit crate
+  const rarity = crate.rarities[Math.floor(Math.random()*crate.rarities.length)];
+  const candidates = charactersList.filter(c => c.rarity === rarity);
+  const character = candidates[Math.floor(Math.random()*candidates.length)];
+  verzameling.push(character);
+  localStorage.setItem('verzameling', JSON.stringify(verzameling));
+
+  displayCharacters();
+  alert(`🎉 Je kreeg: ${character.name} (${character.rarity})`);
+}
+
+function displayCharacters(){
+  const container = document.getElementById('characterContainer');
+  container.innerHTML = '';
+  verzameling.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'character';
+    div.title = c.funfact;
+    div.innerText = `${c.name} (${c.rarity})`;
+    container.appendChild(div);
+  });
+}
+
+// Init
+displayCharacters();
+</script>
+
+</body>
+</html>
