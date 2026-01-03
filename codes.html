@@ -1,126 +1,89 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Codes – Geschiedenis Collectors</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #1f4037, #99f2c8);
-      color: white;
-    }
-
-    .container {
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(12px);
-      border-radius: 25px;
-      padding: 40px;
-      width: 90%;
-      max-width: 500px;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    }
-
-    h1 {
-      margin-bottom: 10px;
-      font-size: 2em;
-    }
-
-    p {
-      opacity: 0.9;
-      margin-bottom: 25px;
-    }
-
-    input {
-      width: 100%;
-      padding: 15px;
-      border-radius: 15px;
-      border: none;
-      font-size: 1.1em;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-
-    button {
-      padding: 15px 25px;
-      font-size: 1.1em;
-      border-radius: 15px;
-      border: none;
-      cursor: pointer;
-      background: linear-gradient(135deg, #ffdd00, #ff9f00);
-      color: #333;
-      font-weight: bold;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-      transition: transform 0.15s ease;
-    }
-
-    button:hover {
-      transform: translateY(-2px);
-    }
-
-    .result {
-      margin-top: 20px;
-      font-size: 1.1em;
-      font-weight: bold;
-    }
-
-    .back {
-      display: block;
-      margin-top: 30px;
-      text-decoration: none;
-      color: white;
-      opacity: 0.9;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Codes</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #2c3e50, #3498db);
+  color: white;
+  text-align: center;
+  padding-top: 80px;
+}
+input, button {
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+}
+button {
+  background: gold;
+  cursor: pointer;
+}
+#result {
+  margin-top: 20px;
+  font-size: 18px;
+}
+a {
+  color: #ffeb3b;
+  display: block;
+  margin-top: 30px;
+}
+</style>
 </head>
 <body>
 
-  <div class="container">
-    <h1>🔑 Codes</h1>
-    <p>Voer een geheime code in en verdien gulden</p>
+<h1>🎟️ Code Inwisselen</h1>
 
-    <input type="text" id="codeInput" placeholder="Bijv. geschiedenisrocks154!" />
-    <button onclick="redeemCode()">Code inwisselen</button>
+<input id="codeInput" placeholder="Voer code in">
+<button onclick="redeemCode()">Inwisselen</button>
 
-    <div class="result" id="result"></div>
+<div id="result"></div>
 
-    <a class="back" href="index.html">⬅ Terug naar home</a>
-  </div>
+<a href="index.html">⬅ Terug naar menu</a>
 
-  <script>
-    let gulden = localStorage.getItem('gulden')
-      ? parseInt(localStorage.getItem('gulden'))
-      : 0;
+<script>
+let gulden = localStorage.getItem('gulden')
+  ? parseInt(localStorage.getItem('gulden'))
+  : 0;
 
-    const codes = {
-      "geschiedenisrocks154!": 150,
-      "romeinen2024": 100,
-      "tijdlijnpower": 200
-    };
+let usedCodes = JSON.parse(localStorage.getItem('usedCodes')) || [];
 
-    function redeemCode() {
-      const input = document.getElementById('codeInput').value;
-      const result = document.getElementById('result');
+const codes = {
+  "geschiedenisrocks154!": 50,
+  "romeinen2024": 30,
+  "napoleonbonaparte": 100,
+  "middeleeuwen": 25
+};
 
-      if (codes[input]) {
-        gulden += codes[input];
-        localStorage.setItem('gulden', gulden);
-        result.innerText = `🎉 Code geldig! +${codes[input]} gulden (Totaal: ${gulden})`;
-        result.style.color = '#ffe066';
-      } else {
-        result.innerText = '❌ Ongeldige code';
-        result.style.color = '#ffcccc';
-      }
+function redeemCode() {
+  const input = document.getElementById('codeInput').value.trim();
+  const result = document.getElementById('result');
 
-      document.getElementById('codeInput').value = '';
-    }
-  </script>
+  if (usedCodes.includes(input)) {
+    result.innerText = "⚠️ Deze code is al gebruikt!";
+    result.style.color = "#ffcc00";
+    return;
+  }
+
+  if (codes[input]) {
+    gulden += codes[input];
+    usedCodes.push(input);
+
+    localStorage.setItem('gulden', gulden);
+    localStorage.setItem('usedCodes', JSON.stringify(usedCodes));
+
+    result.innerText = `🎉 +${codes[input]} gulden! (Totaal: ${gulden})`;
+    result.style.color = "#aaffaa";
+  } else {
+    result.innerText = "❌ Ongeldige code";
+    result.style.color = "#ffaaaa";
+  }
+
+  document.getElementById('codeInput').value = "";
+}
+</script>
 
 </body>
 </html>
