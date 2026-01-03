@@ -1,171 +1,180 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <title>Mijn Verzameling – Geschiedenis Collectors</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #0f2027, #2c5364);
-      color: white;
-      display: flex;
-      justify-content: center;
-    }
-    .container {
-      margin-top: 40px;
-      width: 90%;
-      max-width: 720px;
-      text-align: center;
-    }
-    h1 { font-size: 2.2em; margin-bottom: 10px; }
-    .gulden { font-size: 1.2em; margin-bottom: 25px; }
-    .crates { display: flex; gap: 12px; justify-content: space-between; margin-bottom: 30px; }
-    .crate {
-      flex: 1;
-      background: rgba(255,255,255,0.15);
-      padding: 16px;
-      border-radius: 18px;
-      cursor: pointer;
-      transition: transform 0.15s;
-    }
-    .crate:hover { transform: translateY(-4px); }
-    .units { display: flex; flex-direction: column; gap: 10px; }
-    .unit {
-      background: rgba(255,255,255,0.12);
-      padding: 14px 16px;
-      border-radius: 16px;
-      display: flex;
-      justify-content: space-between;
-      font-weight: 500;
-    }
-    .back { display: block; margin: 35px 0; text-decoration: none; color: white; opacity: 0.9; }
-  </style>
+<meta charset="UTF-8">
+<title>Mijn Verzameling</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: white;
+  text-align: center;
+}
+
+h1 { margin-top: 30px; }
+
+button {
+  padding: 14px 26px;
+  font-size: 16px;
+  border-radius: 14px;
+  border: none;
+  background: goud;
+  cursor: pointer;
+  margin: 12px;
+}
+
+.unit {
+  background: rgba(255,255,255,0.12);
+  padding: 14px;
+  margin: 12px auto;
+  border-radius: 16px;
+  max-width: 460px;
+}
+
+.gewoon { border-left: 6px solid #bdc3c7; }
+.zeldzaam { border-left: 6px solid #3498db; }
+.legendary { border-left: 6px solid #ff9f1a; }
+.mythic { border-left: 6px solid #ffdd00; }
+
+a {
+  kleur: #ffeb3b;
+  display: block;
+  margin: 30px;
+}
+</style>
 </head>
+
 <body>
 
-<div class="container">
-  <h1>📦 Mijn Verzameling</h1>
-  <div class="gulden">💰 Gulden: <span id="guldenDisplay">0</span></div>
+<h1>📜 Historische Verzameling</h1>
+<h2>💰 Gulden: <span id="guldenDisplay">0</span></h2>
 
-  <div class="crates">
-    <div class="crate" onclick="buyCrate('houten')">🟤 Houten crate<br>100 gulden</div>
-    <div class="crate" onclick="buyCrate('zilveren')">🟦 Zilveren crate<br>300 gulden</div>
-    <div class="crate" onclick="buyCrate('gouden')">🟨 Gouden crate<br>700 gulden</div>
-    <div class="crate" onclick="buyCrate('mythic')">🔮 Mythic crate<br>1500 gulden</div>
-  </div>
+<button onclick="openCrate()">📦 Open Historische Kist (20 gulden)</button>
 
-  <div class="units" id="unitContainer"></div>
-  <a class="back" href="index.html">⬅ Terug naar home</a>
-</div>
+<div id="collection"></div>
+
+<a href="index.html">⬅ Terug naar menu</a>
 
 <script>
-// ================= BASIS =================
-let gulden = localStorage.getItem('gulden') ? parseInt(localStorage.getItem('gulden')) : 0;
-document.getElementById('guldenDisplay').innerText = gulden;
+/* =====================
+   BASIS OPSLAG
+===================== */
+let gulden = localStorage.getItem("gulden")
+  ? parseInt(localStorage.getItem("gulden"))
+  : 0;
 
-let units = JSON.parse(localStorage.getItem('units')) || {};
+let units = JSON.parse(localStorage.getItem("units")) || {};
 
-const rarityOrder = ['Mythic','Legendary','Epic','Rare','Common'];
-
-// ================= UNITS DATABASE =================
-// ➕ Voeg hier ZO veel units toe als je wilt
-const unitList = [
-  // Common
-  { name:'Holbewoner', rarity:'Common', chance:60 },
-  { name:'Egyptische Arbeider', rarity:'Common', chance:55 },
-  { name:'Romeinse Burger', rarity:'Common', chance:50 },
-  { name:'Franse Soldaat', rarity:'Common', chance:45 },
-  { name:'Middeleeuwse Boer', rarity:'Common', chance:45 },
-
-  // Rare
-  { name:'Romeinse Soldaat', rarity:'Rare', chance:35 },
-  { name:'Viking Raider', rarity:'Rare', chance:30 },
-  { name:'Griekse Hopliet', rarity:'Rare', chance:30 },
-  { name:'Kruisridder', rarity:'Rare', chance:25 },
-  { name:'Samurai', rarity:'Rare', chance:25 },
-
-  // Epic
-  { name:'Spartaanse Krijger', rarity:'Epic', chance:18 },
-  { name:'Romeinse Centurion', rarity:'Epic', chance:16 },
-  { name:'Napoleon Bonaparte', rarity:'Epic', chance:14 },
-  { name:'Genghis Khan', rarity:'Epic', chance:12 },
-  { name:'Joan of Arc', rarity:'Epic', chance:12 },
-
-  // Legendary
-  { name:'Julius Caesar', rarity:'Legendary', chance:8 },
-  { name:'Alexander de Grote', rarity:'Legendary', chance:7 },
-  { name:'Leonardo da Vinci', rarity:'Legendary', chance:7 },
-  { name:'Christoffel Columbus', rarity:'Legendary', chance:6 },
-  { name:'Cleopatra', rarity:'Legendary', chance:6 },
-
-  // Mythic (EXTREEM ZELDZAAM)
-  { name:'Albert Einstein', rarity:'Mythic', chance:3 },
-  { name:'Isaac Newton', rarity:'Mythic', chance:3 },
-  { name:'Jezus van Nazareth', rarity:'Mythic', chance:2 },
-  { name:'Mohammed', rarity:'Mythic', chance:2 },
-  { name:'Siddhartha Gautama', rarity:'Mythic', chance:2 }
-];
-
-// ================= CRATES =================
-const crates = {
-  houten: { price:100, pool:['Common','Common','Rare'] },
-  zilveren: { price:300, pool:['Common','Rare','Rare','Epic'] },
-  gouden: { price:700, pool:['Rare','Epic','Epic','Legendary'] },
-  mythic: { price:1500, pool:['Epic','Legendary','Mythic'] }
+/* =====================
+   ZELDZAAMHEID VOLGORDE
+===================== */
+const zeldzaamheidVolgorde = {
+  gewoon: 1,
+  zeldzaam: 2,
+  legendary: 3,
+  mythic: 4
 };
 
-// ================= LOGICA =================
-function buyCrate(type){
-  const crate = crates[type];
-  if(gulden < crate.price){ alert('❌ Niet genoeg gulden'); return; }
+/* =====================
+   INHOUD VAN DE KIST
+   REGEL:
+   - GENERIEK → gewoon / zeldzaam
+   - NAMEN → legendary / mythic
+===================== */
+const crateUnits = [
 
-  gulden -= crate.price;
-  localStorage.setItem('gulden', gulden);
-  document.getElementById('guldenDisplay').innerText = gulden;
+  /* GENERIEKE FIGUREN */
+  { naam: "Holbewoner", zeldzaamheid: "gewoon", kans: 16 },
+  { naam: "Romeinse Soldaat", zeldzaamheid: "gewoon", kans: 14 },
+  { naam: "Middeleeuwse Ridder", zeldzaamheid: "zeldzaam", kans: 12 },
+  { naam: "Vikingkrijger", zeldzaamheid: "zeldzaam", kans: 10 },
+  { naam: "Franse Soldaat", zeldzaamheid: "zeldzaam", kans: 8 },
 
-  const rarity = crate.pool[Math.floor(Math.random()*crate.pool.length)];
-  const candidates = unitList.filter(u => u.rarity === rarity);
+  /* LEGENDARY PERSONEN */
+  { naam: "Julius Caesar", zeldzaamheid: "legendary", kans: 6 },
+  { naam: "Napoleon Bonaparte", zeldzaamheid: "legendary", kans: 5 },
+  { naam: "Leonardo da Vinci", zeldzaamheid: "legendary", kans: 5 },
+  { naam: "Christoffel Columbus", zeldzaamheid: "legendary", kans: 4 },
+  { naam: "Jeanne d'Arc", zeldzaamheid: "legendary", kans: 4 },
+  { naam: "Willem de Veroveraar", zeldzaamheid: "legendary", kans: 3 },
 
-  const totalChance = candidates.reduce((s,u)=>s+u.chance,0);
-  let roll = Math.random() * totalChance;
-  let chosen = candidates[0];
+  /* MYTHIC PERSONEN */
+  { naam: "Alexander de Grote", zeldzaamheid: "mythic", kans: 2 },
+  { naam: "Cleopatra", zeldzaamheid: "mythic", kans: 1.8 },
+  { naam: "Dzjengis Khan", zeldzaamheid: "mythic", kans: 1.5 },
+  { naam: "Karel de Grote", zeldzaamheid: "mythic", kans: 1.2 },
+  { naam: "Sun Tzu", zeldzaamheid: "mythic", kans: 1 }
+];
 
-  for(const u of candidates){
-    roll -= u.chance;
-    if(roll <= 0){ chosen = u; break; }
+/* =====================
+   KIST OPENEN
+===================== */
+function openCrate() {
+  if (gulden < 20) {
+    alert("❌ Niet genoeg gulden!");
+    return;
   }
 
-  if(!units[chosen.name]){
-    units[chosen.name] = { count:0, rarity:chosen.rarity, chance:chosen.chance };
+  gulden -= 20;
+  localStorage.setItem("gulden", gulden);
+
+  const worp = Math.random() * 100;
+  let totaal = 0;
+
+  for (let unit of crateUnits) {
+    totaal += unit.kans;
+    if (worp <= totaal) {
+      voegUnitToe(unit);
+      break;
+    }
   }
-  units[chosen.name].count++;
 
-  localStorage.setItem('units', JSON.stringify(units));
-  renderUnits();
-
-  alert(`🎉 Je kreeg: ${chosen.name} (${chosen.rarity})`);
+  updateUI();
 }
 
-function renderUnits(){
-  const container = document.getElementById('unitContainer');
-  container.innerHTML = '';
-
-  const sorted = Object.entries(units).sort((a,b)=>
-    rarityOrder.indexOf(a[1].rarity) - rarityOrder.indexOf(b[1].rarity)
-  );
-
-  for(const [name,data] of sorted){
-    const div = document.createElement('div');
-    div.className = 'unit';
-    div.innerHTML = `<strong>${name}</strong> ${data.rarity} ${data.chance}% ×${data.count}`;
-    container.appendChild(div);
+/* =====================
+   UNIT TOEVOEGEN
+===================== */
+function voegUnitToe(unit) {
+  if (!units[unit.naam]) {
+    units[unit.naam] = {
+      aantal: 0,
+      zeldzaamheid: unit.zeldzaamheid,
+      kans: unit.kans
+    };
   }
+  units[unit.naam].aantal++;
+  localStorage.setItem("units", JSON.stringify(units));
 }
 
-renderUnits();
+/* =====================
+   INTERFACE BIJWERKEN
+===================== */
+function updateUI() {
+  document.getElementById("guldenDisplay").innerText = gulden;
+  const container = document.getElementById("collection");
+  container.innerHTML = "";
+
+  Object.entries(units)
+    .sort((a, b) =>
+      zeldzaamheidVolgorde[b[1].zeldzaamheid] -
+      zeldzaamheidVolgorde[a[1].zeldzaamheid]
+    )
+    .forEach(([naam, data]) => {
+      container.innerHTML += `
+        <div class="unit ${data.zeldzaamheid}">
+          <b>${naam}</b><br>
+          Zeldzaamheid: ${data.zeldzaamheid}<br>
+          Dropkans: ${data.kans}%<br>
+          Aantal: ${data.aantal}
+        </div>
+      `;
+    });
+}
+
+updateUI();
 </script>
 
 </body>
