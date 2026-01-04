@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klok Rollen Spel</title>
+    <style>
+        body {
+            font-family: "Verdana", sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+        button {
+            background-color: #007BFF;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #eaeaea;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        div {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        #feedback {
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🕰️ Klok Rollen Spel</h1>
+    <div id="geldLabel"></div>
+    <div id="beurtLabel"></div>
+    <div id="inkomenLabel"></div>
+    <pre id="inventarisDiv"></pre>
+    <div id="feedback"></div>
+
+    <div id="buttons"></div>
+
+    <script>
+        const clocks = [
+            ["holbewoner", 60, 1],
+            ["romeinsense soldaat", 20, 2],
+            ["franse soldaat", 10, 5],
+            ["ridder", 5, 10],
+            ["gouden Klok", 2, 50],
+            ["diamanten Klok", 1, 100],
+            ["kristal Klok", 0.9, 500],
+            ["quantum Klok", 0.1, 1000],
+            ["matrix Klok", 0.09, 2500],
+            ["ultieme Klok", 0.009, 10000],
+            ["tik tak Klok", 0.001, 50000],
+            ["fantoom Klok", 0.000001, 5000000000],
+            ["tijd heer", 0.000000001, 5000000000000000],
+            ["tijd monarch", 0.000000001, 50000000000000000],
+            ["tijd god", 0.000000000001, 50000000000000000000000],
+            ["tijd god overdrive", 0.00000000000001, 5000000000000000000000000000000000],
+            ["geschiedenis leraar", 0.00000000000000001, 5000000000000000000000000000000000000000000],
+            ["tijd machine",0.000000000000000000001, 5000000000000000000000000000000000000000000000000],
+            ["spel winnaar", 0.0000000000000000000000000000000000000000000000001, 100000000000000000000000000000000000000000000000000000000000000]
+        ];
+
+        let inventaris = {};
+        let geld = 100;
+        let beurt = 1;
+        const rolKosten = 25;
+
+        const geldLabel = document.getElementById("geldLabel");
+        const beurtLabel = document.getElementById("beurtLabel");
+        const inkomenLabel = document.getElementById("inkomenLabel");
+        const inventarisDiv = document.getElementById("inventarisDiv");
+        const feedback = document.getElementById("feedback");
+        const buttonsDiv = document.getElementById("buttons");
+
+        const updateUI = () => {
+            geldLabel.textContent = `💰 Geld: ${geld}`;
+            beurtLabel.textContent = `📆 Beurt: ${beurt}`;
+            inkomenLabel.textContent = `💰 Inkomsten per beurt: ${berekenInkomen()}`;
+            inventarisDiv.textContent = toonInventaris();
+        };
+
+        const getClockEarning = (name) => {
+            for (let [clockName, _, earning] of clocks) {
+                if (clockName === name) return earning;
+            }
+            return 0;
+        };
+
+        const berekenInkomen = () => {
+            let totaal = 0;
+            for (let klok in inventaris) {
+                totaal += getClockEarning(klok) * inventaris[klok];
+            }
+            return totaal;
+        };
+
+        const toonInventaris = () => {
+            let resultaat = "";
+            for (let name in inventaris) {
+                const count = inventaris[name];
+                const earning = getClockEarning(name);
+                const chance = getClockKans(name);
+                resultaat += `- ${name} x${count} (💰 ${earning} per stuk, 🎲 kans: ${chance}%)\n`;
+            }
+            return resultaat || "Je hebt nog geen characters!";
+        };
+
+        const getClockKans = (name) => {
+            for (let [clockName, chance] of clocks) {
+                if (clockName === name) return chance;
+            }
+            return "Onbekend";
+        };
+
+        const rolKlok = () => {
+            const roll = Math.random() * 100;
+            let totaal = 0;
+            for (let [name, chance] of clocks) {
+                totaal += chance;
+                if (roll <= totaal) return name;
+            }
+            return clocks[0][0];
+        };
+
+        const rolActie = (aantal = 1) => {
+            if (geld < rolKosten * aantal) {
+                feedback.textContent = "🚫 Niet genoeg geld!";
+                return;
+            }
+            geld -= rolKosten * aantal;
+            for (let i = 0; i < aantal; i++) {
+                const klok = rolKlok();
+                if (!inventaris[klok]) inventaris[klok] = 0;
+                inventaris[klok]++;
+            }
+            feedback.textContent = `🎉 Je rolde ${aantal}x!`;
+            updateUI();
+        };
+
+        const volgendeBeurt = () => {
+            const verdiend = berekenInkomen();
+            geld += verdiend;
+            beurt++;
+            feedback.textContent = `✅ Je verdiende ${verdiend} deze beurt!`;
+            updateUI();
+        };
+
+        const volgendeBeurtMetDelay = () => {
+            setTimeout(() => {
+                volgendeBeurt();
+            }, 2000);
+        };
+
+        const maakKnop = (label, callback) => {
+            const btn = document.createElement("button");
+            btn.textContent = label;
+            btn.onclick = callback;
+            buttonsDiv.appendChild(btn);
+        };
+
+        maakKnop("🎲 Rol x1", () => rolActie(1));
+        maakKnop("🎲 Rol x10", () => rolActie(10));
+        maakKnop("🎲 Rol x100", () => rolActie(100));
+        maakKnop("🎲 Rol x1000", () => rolActie(1000));
+        maakKnop("🎲 Rol x100000", () => rolActie(100000));
+        maakKnop("🎲 Rol x1000000", () => rolActie(1000000));
+        maakKnop("🎲 Rol x10000000", () => rolActie(10000000));
+        maakKnop("➡️ Volgende Beurt", volgendeBeurtMetDelay);
+
+        updateUI();
+    </script>
+</body>
+</html>
