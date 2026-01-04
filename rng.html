@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klok Rollen Spel</title>
+    <title>Geschiedenis Units Game</title>
     <style>
         body {
             font-family: "Verdana", sans-serif;
@@ -22,7 +22,6 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            transition: background-color 0.2s;
         }
         button:hover {
             background-color: #0056b3;
@@ -45,146 +44,139 @@
 </head>
 <body>
 
-    <h1>🕰️ Klok Rollen Spel</h1>
-    <div id="geldLabel"></div>
-    <div id="beurtLabel"></div>
-    <div id="inkomenLabel"></div>
-    <pre id="inventarisDiv"></pre>
-    <div id="feedback"></div>
+<h1>🏺 Geschiedenis Units</h1>
 
-    <div id="buttons"></div>
+<div id="geldLabel"></div>
+<div id="beurtLabel"></div>
+<div id="inkomenLabel"></div>
+<pre id="inventarisDiv"></pre>
+<div id="feedback"></div>
 
-    <script>
-        const clocks = [
-            ["holbewoner", 60, 1],
-            ["romeinsense soldaat", 20, 2],
-            ["franse soldaat", 10, 5],
-            ["ridder", 5, 10],
-            ["gouden Klok", 2, 50],
-            ["diamanten Klok", 1, 100],
-            ["kristal Klok", 0.9, 500],
-            ["quantum Klok", 0.1, 1000],
-            ["matrix Klok", 0.09, 2500],
-            ["ultieme Klok", 0.009, 10000],
-            ["tik tak Klok", 0.001, 50000],
-            ["fantoom Klok", 0.000001, 5000000000],
-            ["tijd heer", 0.000000001, 5000000000000000],
-            ["tijd monarch", 0.000000001, 50000000000000000],
-            ["tijd god", 0.000000000001, 50000000000000000000000],
-            ["tijd god overdrive", 0.00000000000001, 5000000000000000000000000000000000],
-            ["geschiedenis leraar", 0.00000000000000001, 5000000000000000000000000000000000000000000],
-            ["tijd machine",0.000000000000000000001, 5000000000000000000000000000000000000000000000000],
-            ["spel winnaar", 0.0000000000000000000000000000000000000000000000001, 100000000000000000000000000000000000000000000000000000000000000]
-        ];
+<div id="buttons"></div>
 
-        let inventaris = {};
-        let geld = 100;
-        let beurt = 1;
-        const rolKosten = 25;
+<script>
+    // [Naam, kans (%), inkomen per beurt]
+    const units = [
+        ["Boer", 40, 1],
+        ["Middeleeuwse Soldaat", 25, 3],
+        ["Romeinse Soldaat", 15, 8],
+        ["Viking", 8, 15],
+        ["Franse Soldaat (Napoleon)", 5, 30],
+        ["Ridde­r", 3, 60],
+        ["Samurai", 2, 120],
+        ["Spaanse Conquistador", 1.5, 250],
+        ["Romeinse Generaal", 0.8, 500],
+        ["Napoleon Bonaparte", 0.3, 2000],
+        ["Julius Caesar", 0.15, 5000],
+        ["Alexander de Grote", 0.05, 20000]
+    ];
 
-        const geldLabel = document.getElementById("geldLabel");
-        const beurtLabel = document.getElementById("beurtLabel");
-        const inkomenLabel = document.getElementById("inkomenLabel");
-        const inventarisDiv = document.getElementById("inventarisDiv");
-        const feedback = document.getElementById("feedback");
-        const buttonsDiv = document.getElementById("buttons");
+    let inventaris = {};
+    let geld = 100;
+    let beurt = 1;
+    const rolKosten = 25;
 
-        const updateUI = () => {
-            geldLabel.textContent = `💰 Geld: ${geld}`;
-            beurtLabel.textContent = `📆 Beurt: ${beurt}`;
-            inkomenLabel.textContent = `💰 Inkomsten per beurt: ${berekenInkomen()}`;
-            inventarisDiv.textContent = toonInventaris();
-        };
+    const geldLabel = document.getElementById("geldLabel");
+    const beurtLabel = document.getElementById("beurtLabel");
+    const inkomenLabel = document.getElementById("inkomenLabel");
+    const inventarisDiv = document.getElementById("inventarisDiv");
+    const feedback = document.getElementById("feedback");
+    const buttonsDiv = document.getElementById("buttons");
 
-        const getClockEarning = (name) => {
-            for (let [clockName, _, earning] of clocks) {
-                if (clockName === name) return earning;
-            }
-            return 0;
-        };
+    const updateUI = () => {
+        geldLabel.textContent = `💰 Geld: ${geld}`;
+        beurtLabel.textContent = `📆 Beurt: ${beurt}`;
+        inkomenLabel.textContent = `📈 Macht per beurt: ${berekenInkomen()}`;
+        inventarisDiv.textContent = toonInventaris();
+    };
 
-        const berekenInkomen = () => {
-            let totaal = 0;
-            for (let klok in inventaris) {
-                totaal += getClockEarning(klok) * inventaris[klok];
-            }
-            return totaal;
-        };
+    const getUnitInkomen = (name) => {
+        for (let [unitNaam, , inkomen] of units) {
+            if (unitNaam === name) return inkomen;
+        }
+        return 0;
+    };
 
-        const toonInventaris = () => {
-            let resultaat = "";
-            for (let name in inventaris) {
-                const count = inventaris[name];
-                const earning = getClockEarning(name);
-                const chance = getClockKans(name);
-                resultaat += `- ${name} x${count} (💰 ${earning} per stuk, 🎲 kans: ${chance}%)\n`;
-            }
-            return resultaat || "Je hebt nog geen characters!";
-        };
+    const berekenInkomen = () => {
+        let totaal = 0;
+        for (let unit in inventaris) {
+            totaal += getUnitInkomen(unit) * inventaris[unit];
+        }
+        return totaal;
+    };
 
-        const getClockKans = (name) => {
-            for (let [clockName, chance] of clocks) {
-                if (clockName === name) return chance;
-            }
-            return "Onbekend";
-        };
+    const toonInventaris = () => {
+        let resultaat = "";
+        for (let naam in inventaris) {
+            const aantal = inventaris[naam];
+            const inkomen = getUnitInkomen(naam);
+            const kans = getUnitKans(naam);
+            resultaat += `- ${naam} x${aantal} (⚔️ ${inkomen}/beurt, 🎲 kans: ${kans}%)\n`;
+        }
+        return resultaat || "Je hebt nog geen units.";
+    };
 
-        const rolKlok = () => {
-            const roll = Math.random() * 100;
-            let totaal = 0;
-            for (let [name, chance] of clocks) {
-                totaal += chance;
-                if (roll <= totaal) return name;
-            }
-            return clocks[0][0];
-        };
+    const getUnitKans = (name) => {
+        for (let [unitNaam, kans] of units) {
+            if (unitNaam === name) return kans;
+        }
+        return "?";
+    };
 
-        const rolActie = (aantal = 1) => {
-            if (geld < rolKosten * aantal) {
-                feedback.textContent = "🚫 Niet genoeg geld!";
-                return;
-            }
-            geld -= rolKosten * aantal;
-            for (let i = 0; i < aantal; i++) {
-                const klok = rolKlok();
-                if (!inventaris[klok]) inventaris[klok] = 0;
-                inventaris[klok]++;
-            }
-            feedback.textContent = `🎉 Je rolde ${aantal}x!`;
-            updateUI();
-        };
+    const rolUnit = () => {
+        const roll = Math.random() * 100;
+        let totaal = 0;
+        for (let [name, kans] of units) {
+            totaal += kans;
+            if (roll <= totaal) return name;
+        }
+        return units[0][0];
+    };
 
-        const volgendeBeurt = () => {
-            const verdiend = berekenInkomen();
-            geld += verdiend;
-            beurt++;
-            feedback.textContent = `✅ Je verdiende ${verdiend} deze beurt!`;
-            updateUI();
-        };
+    const rolActie = (aantal = 1) => {
+        if (geld < rolKosten * aantal) {
+            feedback.textContent = "🚫 Niet genoeg geld!";
+            return;
+        }
+        geld -= rolKosten * aantal;
 
-        const volgendeBeurtMetDelay = () => {
-            setTimeout(() => {
-                volgendeBeurt();
-            }, 2000);
-        };
+        for (let i = 0; i < aantal; i++) {
+            const unit = rolUnit();
+            if (!inventaris[unit]) inventaris[unit] = 0;
+            inventaris[unit]++;
+        }
 
-        const maakKnop = (label, callback) => {
-            const btn = document.createElement("button");
-            btn.textContent = label;
-            btn.onclick = callback;
-            buttonsDiv.appendChild(btn);
-        };
-
-        maakKnop("🎲 Rol x1", () => rolActie(1));
-        maakKnop("🎲 Rol x10", () => rolActie(10));
-        maakKnop("🎲 Rol x100", () => rolActie(100));
-        maakKnop("🎲 Rol x1000", () => rolActie(1000));
-        maakKnop("🎲 Rol x100000", () => rolActie(100000));
-        maakKnop("🎲 Rol x1000000", () => rolActie(1000000));
-        maakKnop("🎲 Rol x10000000", () => rolActie(10000000));
-        maakKnop("➡️ Volgende Beurt", volgendeBeurtMetDelay);
-
+        feedback.textContent = `🎉 Je hebt ${aantal} unit(s) gerold!`;
         updateUI();
-    </script>
+    };
+
+    const volgendeBeurt = () => {
+        const verdiend = berekenInkomen();
+        geld += verdiend;
+        beurt++;
+        feedback.textContent = `✅ Je rijk groeit met ${verdiend}!`;
+        updateUI();
+    };
+
+    const volgendeBeurtMetDelay = () => {
+        setTimeout(volgendeBeurt, 2000);
+    };
+
+    const maakKnop = (label, actie) => {
+        const btn = document.createElement("button");
+        btn.textContent = label;
+        btn.onclick = actie;
+        buttonsDiv.appendChild(btn);
+    };
+
+    maakKnop("🎲 Rol x1", () => rolActie(1));
+    maakKnop("🎲 Rol x10", () => rolActie(10));
+    maakKnop("🎲 Rol x100", () => rolActie(100));
+    maakKnop("🎲 Rol x1000", () => rolActie(1000));
+    maakKnop("➡️ Volgende Beurt", volgendeBeurtMetDelay);
+
+    updateUI();
+</script>
+
 </body>
 </html>
