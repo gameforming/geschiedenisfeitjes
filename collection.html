@@ -20,7 +20,7 @@ button {
   font-size: 16px;
   border-radius: 14px;
   border: none;
-  background: goud;
+  background: gold;
   cursor: pointer;
   margin: 12px;
 }
@@ -33,13 +33,14 @@ button {
   max-width: 460px;
 }
 
-.gewoon { border-left: 6px solid #bdc3c7; }
-.zeldzaam { border-left: 6px solid #3498db; }
+.common { border-left: 6px solid #bdc3c7; }
+.rare { border-left: 6px solid #3498db; }
+.epic { border-left: 6px solid #9b59b6; }
 .legendary { border-left: 6px solid #ff9f1a; }
 .mythic { border-left: 6px solid #ffdd00; }
 
 a {
-  kleur: #ffeb3b;
+  color: #ffeb3b;
   display: block;
   margin: 30px;
 }
@@ -51,7 +52,9 @@ a {
 <h1>📜 Historische Verzameling</h1>
 <h2>💰 Gulden: <span id="guldenDisplay">0</span></h2>
 
-<button onclick="openCrate()">📦 Open Historische Kist (20 gulden)</button>
+<button onclick="openCrate('common')">📦 Open Common Crate (20 gulden)</button>
+<button onclick="openCrate('rare')">📦 Open Rare Crate (50 gulden)</button>
+<button onclick="openCrate('epic')">📦 Open Epic Crate (100 gulden)</button>
 
 <div id="collection"></div>
 
@@ -71,66 +74,78 @@ let units = JSON.parse(localStorage.getItem("units")) || {};
    ZELDZAAMHEID VOLGORDE
 ===================== */
 const zeldzaamheidVolgorde = {
-  gewoon: 1,
-  zeldzaam: 2,
-  legendary: 3,
-  mythic: 4
+  common: 1,
+  rare: 2,
+  epic: 3,
+  legendary: 4,
+  mythic: 5
 };
 
 /* =====================
-   INHOUD VAN DE KIST
-   REGEL:
-   - GENERIEK → gewoon / zeldzaam
-   - NAMEN → legendary / mythic
+   ALLE UNITS
 ===================== */
-const crateUnits = [
-
-  /* GENERIEKE FIGUREN */
-  { naam: "Holbewoner", zeldzaamheid: "gewoon", kans: 16 },
-  { naam: "Romeinse Soldaat", zeldzaamheid: "gewoon", kans: 14 },
-  { naam: "Middeleeuwse Ridder", zeldzaamheid: "zeldzaam", kans: 12 },
-  { naam: "Vikingkrijger", zeldzaamheid: "zeldzaam", kans: 10 },
-  { naam: "Franse Soldaat", zeldzaamheid: "zeldzaam", kans: 8 },
-
-  /* LEGENDARY PERSONEN */
-  { naam: "Julius Caesar", zeldzaamheid: "legendary", kans: 6 },
-  { naam: "Napoleon Bonaparte", zeldzaamheid: "legendary", kans: 5 },
-  { naam: "Leonardo da Vinci", zeldzaamheid: "legendary", kans: 5 },
-  { naam: "Christoffel Columbus", zeldzaamheid: "legendary", kans: 4 },
-  { naam: "Jeanne d'Arc", zeldzaamheid: "legendary", kans: 4 },
-  { naam: "Willem de Veroveraar", zeldzaamheid: "legendary", kans: 3 },
-
-  /* MYTHIC PERSONEN */
-  { naam: "Alexander de Grote", zeldzaamheid: "mythic", kans: 2 },
-  { naam: "Cleopatra", zeldzaamheid: "mythic", kans: 1.8 },
-  { naam: "Dzjengis Khan", zeldzaamheid: "mythic", kans: 1.5 },
-  { naam: "Karel de Grote", zeldzaamheid: "mythic", kans: 1.2 },
-  { naam: "Sun Tzu", zeldzaamheid: "mythic", kans: 1 }
+const allUnits = [
+  { naam: "Holbewoner", zeldzaamheid: "common" },
+  { naam: "Romeinse Soldaat", zeldzaamheid: "common" },
+  { naam: "Middeleeuwse Ridder", zeldzaamheid: "rare" },
+  { naam: "Vikingkrijger", zeldzaamheid: "rare" },
+  { naam: "Franse Soldaat", zeldzaamheid: "rare" },
+  { naam: "Julius Caesar", zeldzaamheid: "legendary" },
+  { naam: "Napoleon Bonaparte", zeldzaamheid: "legendary" },
+  { naam: "Leonardo da Vinci", zeldzaamheid: "legendary" },
+  { naam: "Alexander de Grote", zeldzaamheid: "mythic" },
+  { naam: "Cleopatra", zeldzaamheid: "mythic" }
 ];
+
+/* =====================
+   CRATE KANSEN PER ZELDZAAMHEID
+   voorbeeld:
+   common crate → 70% common, 29% rare, 1% epic
+===================== */
+const crateChances = {
+  common: { common: 70, rare: 29, epic: 1 },
+  rare: { common: 20, rare: 60, epic: 19, legendary: 1 },
+  epic: { rare: 30, epic: 60, legendary: 9, mythic: 1 }
+};
+
+/* =====================
+   HELPER: ROL EEN ZELDZAAMHEID
+===================== */
+function rollRarity(crateType) {
+  const roll = Math.random() * 100;
+  let totaal = 0;
+  const chances = crateChances[crateType];
+  for (let rarity in chances) {
+    totaal += chances[rarity];
+    if (roll <= totaal) return rarity;
+  }
+  // fallback
+  return Object.keys(chances)[0];
+}
 
 /* =====================
    KIST OPENEN
 ===================== */
-function openCrate() {
-  if (gulden < 20) {
+function openCrate(crateType) {
+  let prijs = crateType === 'common' ? 20 : crateType === 'rare' ? 50 : 100;
+  if (gulden < prijs) {
     alert("❌ Niet genoeg gulden!");
     return;
   }
 
-  gulden -= 20;
+  gulden -= prijs;
   localStorage.setItem("gulden", gulden);
 
-  const worp = Math.random() * 100;
-  let totaal = 0;
+  // kies zeldzaamheid
+  const rarity = rollRarity(crateType);
 
-  for (let unit of crateUnits) {
-    totaal += unit.kans;
-    if (worp <= totaal) {
-      voegUnitToe(unit);
-      break;
-    }
-  }
+  // filter units die bij die zeldzaamheid horen
+  const possibleUnits = allUnits.filter(u => u.zeldzaamheid === rarity);
 
+  // kies random unit
+  const unit = possibleUnits[Math.floor(Math.random() * possibleUnits.length)];
+
+  voegUnitToe(unit);
   updateUI();
 }
 
@@ -141,8 +156,7 @@ function voegUnitToe(unit) {
   if (!units[unit.naam]) {
     units[unit.naam] = {
       aantal: 0,
-      zeldzaamheid: unit.zeldzaamheid,
-      kans: unit.kans
+      zeldzaamheid: unit.zeldzaamheid
     };
   }
   units[unit.naam].aantal++;
@@ -159,15 +173,13 @@ function updateUI() {
 
   Object.entries(units)
     .sort((a, b) =>
-      zeldzaamheidVolgorde[b[1].zeldzaamheid] -
-      zeldzaamheidVolgorde[a[1].zeldzaamheid]
+      zeldzaamheidVolgorde[b[1].zeldzaamheid] - zeldzaamheidVolgorde[a[1].zeldzaamheid]
     )
     .forEach(([naam, data]) => {
       container.innerHTML += `
         <div class="unit ${data.zeldzaamheid}">
           <b>${naam}</b><br>
           Zeldzaamheid: ${data.zeldzaamheid}<br>
-          Dropkans: ${data.kans}%<br>
           Aantal: ${data.aantal}
         </div>
       `;
