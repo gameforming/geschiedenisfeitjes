@@ -44,7 +44,7 @@ div#feedback {
     color: #ffe66d;
 }
 
-div#rewards {
+div#beloningen {
     margin-top: 30px;
     font-size: 14px;
     color: #cccccc;
@@ -70,11 +70,11 @@ div#rewards {
 <div id="buttons"></div>
 
 <!-- Beloningen overzicht -->
-<div id="rewards">
+<div id="beloningen">
     <strong>Beloningen voor nieuwe spelers:</strong>
     <ul>
-        <li>Elke nieuwe unit die je krijgt = <strong>+2 gulden</strong></li>
-        <li>Elke 100 beurten = <strong>+10 gulden</strong></li>
+        <li>Elke 100 beurten = <strong>+10 gulden</strong> (wordt opgeslagen)</li>
+        <li>Elke nieuwe unit die je rolt = <strong>+2 gulden</strong> (wordt niet opgeslagen)</li>
         <li>Units verdienen inkomen per beurt afhankelijk van hun kracht</li>
         <li>Roll-knoppen: x1, x10, x100, x1000</li>
     </ul>
@@ -97,9 +97,9 @@ div#rewards {
         ["Sun Tzu", 0.005, 200000]
     ];
 
-    let inventaris = JSON.parse(localStorage.getItem("gameInventory")) || {};
-    let geld = localStorage.getItem("gameMoney") ? parseInt(localStorage.getItem("gameMoney")) : 100;
-    let beurt = localStorage.getItem("gameTurn") ? parseInt(localStorage.getItem("gameTurn")) : 1;
+    let inventaris = {};
+    let geld = 100;
+    let beurt = 1;
     const rolKosten = 25;
 
     const geldLabel = document.getElementById("geldLabel");
@@ -110,12 +110,25 @@ div#rewards {
     const feedback = document.getElementById("feedback");
     const buttonsDiv = document.getElementById("buttons");
 
+    // ========================== UI Update
     const updateUI = () => {
         geldLabel.textContent = `💰 Geld: ${geld}`;
         beurtLabel.textContent = `📆 Beurt: ${beurt}`;
         inkomenLabel.textContent = `📈 Macht per beurt: ${berekenInkomen()}`;
         rolKostenLabel.textContent = `🎲 Roll kost: ${rolKosten} geld per unit`;
-        inventarisDiv.textContent = toonInventaris();
+
+        let resultaat = "";
+        for (let naam in inventaris) {
+            const aantal = inventaris[naam];
+            const inkomen = getUnitInkomen(naam);
+            resultaat += `- ${naam} x${aantal} (⚔️ ${inkomen}/beurt)\n`;
+        }
+        inventarisDiv.textContent = resultaat || "Je hebt nog geen units.";
+
+        if (!feedback.textContent) feedback.textContent = "";
+
+        // ✅ Alleen bonusgulden opslaan (100-beurten beloning)
+        localStorage.setItem("bonusGulden", localStorage.getItem("bonusGulden") || 0);
     };
 
     const getUnitInkomen = (name) => {
@@ -131,16 +144,6 @@ div#rewards {
             totaal += getUnitInkomen(unit) * inventaris[unit];
         }
         return totaal;
-    };
-
-    const toonInventaris = () => {
-        let resultaat = "";
-        for (let naam in inventaris) {
-            const aantal = inventaris[naam];
-            const inkomen = getUnitInkomen(naam);
-            resultaat += `- ${naam} x${aantal} (⚔️ ${inkomen}/beurt)\n`;
-        }
-        return resultaat || "Je hebt nog geen units.";
     };
 
     const rolUnit = () => {
@@ -167,7 +170,7 @@ div#rewards {
             const unit = rolUnit();
             if (!inventaris[unit]) {
                 inventaris[unit] = 0;
-                geld += 2; // nieuwe unit = +2 gulden
+                geld += 2; // nieuwe unit geeft +2 gulden, maar wordt niet opgeslagen
             }
             inventaris[unit]++;
         }
@@ -181,10 +184,14 @@ div#rewards {
         geld += verdiend;
         beurt++;
 
-        // elke 100 beurten +10 gulden
         if (beurt % 100 === 0) {
-            geld += 10;
+            geld += 10; // bonus
             feedback.textContent = `✅ Je rijk groeit met ${verdiend} geld en +10 bonus voor 100 beurten!`;
+
+            // ✅ Opslaan van bonus in localStorage
+            let savedBonus = localStorage.getItem("bonusGulden") ? parseInt(localStorage.getItem("bonusGulden")) : 0;
+            savedBonus += 10;
+            localStorage.setItem("bonusGulden", savedBonus);
         } else {
             feedback.textContent = `✅ Je rijk groeit met ${verdiend} geld!`;
         }
@@ -199,6 +206,7 @@ div#rewards {
         buttonsDiv.appendChild(btn);
     };
 
+    // ========================== Buttons
     maakKnop("🎲 Rol x1 (25)", () => rolActie(1));
     maakKnop("🎲 Rol x10 (250)", () => rolActie(10));
     maakKnop("🎲 Rol x100 (2500)", () => rolActie(100));
