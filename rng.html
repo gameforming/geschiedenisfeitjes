@@ -69,7 +69,6 @@ div#beloningen {
 <div id="feedback"></div>
 <div id="buttons"></div>
 
-<!-- Beloningen overzicht -->
 <div id="beloningen">
     <strong>Beloningen voor nieuwe spelers:</strong>
     <ul>
@@ -110,7 +109,6 @@ div#beloningen {
     const feedback = document.getElementById("feedback");
     const buttonsDiv = document.getElementById("buttons");
 
-    // ========================== UI Update
     const updateUI = () => {
         geldLabel.textContent = `💰 Geld: ${geld}`;
         beurtLabel.textContent = `📆 Beurt: ${beurt}`;
@@ -127,7 +125,6 @@ div#beloningen {
 
         if (!feedback.textContent) feedback.textContent = "";
 
-        // ✅ Alleen bonusgulden opslaan (100-beurten beloning)
         localStorage.setItem("bonusGulden", localStorage.getItem("bonusGulden") || 0);
     };
 
@@ -164,13 +161,12 @@ div#beloningen {
         }
 
         geld -= totaleKosten;
-        let nieuweUnits = 0;
 
         for (let i = 0; i < aantal; i++) {
             const unit = rolUnit();
             if (!inventaris[unit]) {
                 inventaris[unit] = 0;
-                geld += 2; // nieuwe unit geeft +2 gulden, maar wordt niet opgeslagen
+                geld += 2;
             }
             inventaris[unit]++;
         }
@@ -185,10 +181,9 @@ div#beloningen {
         beurt++;
 
         if (beurt % 100 === 0) {
-            geld += 10; // bonus
+            geld += 10;
             feedback.textContent = `✅ Je rijk groeit met ${verdiend} geld en +10 bonus voor 100 beurten!`;
 
-            // ✅ Opslaan van bonus in localStorage
             let savedBonus = localStorage.getItem("bonusGulden") ? parseInt(localStorage.getItem("bonusGulden")) : 0;
             savedBonus += 10;
             localStorage.setItem("bonusGulden", savedBonus);
@@ -206,12 +201,14 @@ div#beloningen {
         buttonsDiv.appendChild(btn);
     };
 
-    // ========================== Buttons
     maakKnop("🎲 Rol x1 (25)", () => rolActie(1));
     maakKnop("🎲 Rol x10 (250)", () => rolActie(10));
     maakKnop("🎲 Rol x100 (2500)", () => rolActie(100));
     maakKnop("🎲 Rol x1000 (25000)", () => rolActie(1000));
     maakKnop("➡️ Volgende Beurt", volgendeBeurt);
+
+    // 🔹 NIEUWE KNOP (enige toevoeging)
+    maakKnop("⬅️ Terug naar games", () => window.location.href = "games.html");
 
     updateUI();
 </script>
