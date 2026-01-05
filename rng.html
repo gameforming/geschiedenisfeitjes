@@ -49,7 +49,7 @@ div {
 <div id="geldLabel"></div>
 <div id="turnLabel"></div>
 <div id="inkomenLabel"></div>
-<div id="rolKostenLabel"></div>
+<div id="timerLabel"></div>
 <pre id="inventarisDiv"></pre>
 <div id="feedback"></div>
 <div id="buttons"></div>
@@ -76,10 +76,15 @@ let money = parseInt(localStorage.getItem("geld")) || 100;
 let turn = parseInt(localStorage.getItem("turn")) || 1;
 const rollCost = 25;
 
+// payout systeem
+const PAYOUT_INTERVAL = 10; // seconden
+let timeLeft = PAYOUT_INTERVAL;
+
 // ================== ELEMENTEN ==================
 const moneyLabel = document.getElementById("geldLabel");
 const turnLabel = document.getElementById("turnLabel");
 const incomeLabel = document.getElementById("inkomenLabel");
+const timerLabel = document.getElementById("timerLabel");
 const inventarisDiv = document.getElementById("inventarisDiv");
 const feedback = document.getElementById("feedback");
 const buttonsDiv = document.getElementById("buttons");
@@ -88,12 +93,13 @@ const buttonsDiv = document.getElementById("buttons");
 const updateUI = () => {
     moneyLabel.textContent = `💰 Geld: ${money}`;
     turnLabel.textContent = `📆 Beurt: ${turn}`;
-    incomeLabel.textContent = `💰 Inkomen per beurt: ${calculateIncome()}`;
+    incomeLabel.textContent = `💰 Inkomen per payout: ${calculateIncome()}`;
+    timerLabel.textContent = `⏳ Volgende payout over: ${timeLeft}s`;
     inventarisDiv.textContent = showInventory();
 };
 
 const getUnitIncome = (name) => {
-    for (let [unitName, _, income] of unitsList) {
+    for (let [unitName, , income] of unitsList) {
         if (unitName === name) return income;
     }
     return 0;
@@ -117,10 +123,7 @@ const calculateIncome = () => {
 const showInventory = () => {
     let result = "";
     for (let name in inventory) {
-        const count = inventory[name];
-        const income = getUnitIncome(name);
-        const chance = getUnitChance(name);
-        result += `- ${name} x${count} (💰 ${income} per beurt, 🎲 kans: ${chance}%)\n`;
+        result += `- ${name} x${inventory[name]} (💰 ${getUnitIncome(name)} per payout, 🎲 ${getUnitChance(name)}%)\n`;
     }
     return result || "Je hebt nog geen units!";
 };
@@ -146,11 +149,8 @@ const rollAction = (rolls = 1) => {
 
     for (let i = 0; i < rolls; i++) {
         const unit = rollUnit();
-
-        // ✅ +2 gulden bij nieuwe unlock
         const isNew = !inventory[unit];
         if (isNew) money += 2;
-
         inventory[unit] = (inventory[unit] || 0) + 1;
     }
 
@@ -161,25 +161,26 @@ const rollAction = (rolls = 1) => {
     updateUI();
 };
 
-const nextTurn = () => {
-    const earned = calculateIncome();
-    money += earned;
-    turn++;
+// ================== AUTOMATISCHE PAYOUT ==================
+setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+        const earned = calculateIncome();
+        money += earned;
+        turn++;
 
-    // ✅ elke 100 beurten +10 gulden
-    if (turn % 100 === 0) money += 10;
+        if (turn % 100 === 0) money += 10;
 
-    localStorage.setItem("geld", money);
-    localStorage.setItem("turn", turn);
+        localStorage.setItem("geld", money);
+        localStorage.setItem("turn", turn);
 
-    feedback.textContent = `✅ Je verdiende ${earned} deze beurt!`;
+        feedback.textContent = `💸 Payout ontvangen: +${earned}`;
+        timeLeft = PAYOUT_INTERVAL;
+    }
     updateUI();
-};
+}, 1000);
 
-const nextTurnWithDelay = () => {
-    setTimeout(nextTurn, 2000);
-};
-
+// ================== BUTTONS ==================
 const createButton = (label, callback) => {
     const btn = document.createElement("button");
     btn.textContent = label;
@@ -190,8 +191,7 @@ const createButton = (label, callback) => {
 createButton("🎲 Roll x1", () => rollAction(1));
 createButton("🎲 Roll x10", () => rollAction(10));
 createButton("🎲 Roll x100", () => rollAction(100));
-createbutton("🎲 roll x 1000",()=> rollaction(1000));
-createButton("➡️ Next Turn", nextTurnWithDelay);
+createButton("🎲 Roll x1000", () => rollAction(1000));
 createButton("⬅ Terug naar Games", () => {
     window.location.href = "games.html";
 });
