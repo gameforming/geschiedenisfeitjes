@@ -1,63 +1,86 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geschiedenis Verzamel Game</title>
-    <style>
-        body {
-            font-family: Verdana, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-            padding: 20px;
-            max-width: 800px;
-            margin: auto;
-        }
-        button {
-            background-color: #007BFF;
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        pre {
-            background-color: #eaeaea;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        div {
-            margin: 10px 0;
-            font-size: 18px;
-        }
-        #feedback {
-            font-weight: bold;
-            color: green;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historische Units Game</title>
+<style>
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+h1 { margin-top: 20px; }
+
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: none;
+    background: gold;
+    cursor: pointer;
+    margin: 5px;
+}
+button:hover { opacity: 0.85; }
+
+div#inventory {
+    margin-top: 20px;
+    white-space: pre-wrap;
+    text-align: left;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    background: rgba(255,255,255,0.12);
+    padding: 12px;
+    border-radius: 12px;
+}
+
+div#feedback {
+    margin-top: 20px;
+    font-weight: bold;
+    color: #ffe66d;
+}
+
+div#rewards {
+    margin-top: 30px;
+    font-size: 14px;
+    color: #cccccc;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+    line-height: 1.5;
+}
+</style>
 </head>
 <body>
 
-<h1>🏺 Geschiedenis Units</h1>
+<h1>🏺 Historische Units Game</h1>
 
-<div id="geldLabel"></div>
-<div id="beurtLabel"></div>
-<div id="inkomenLabel"></div>
-<div id="rolKostenLabel"></div>
+<div class="stats" id="geldLabel"></div>
+<div class="stats" id="beurtLabel"></div>
+<div class="stats" id="inkomenLabel"></div>
+<div class="stats" id="rolKostenLabel"></div>
 
-<pre id="inventarisDiv"></pre>
+<div id="inventory"></div>
 <div id="feedback"></div>
-
 <div id="buttons"></div>
 
+<!-- Beloningen overzicht -->
+<div id="rewards">
+    <strong>Beloningen voor nieuwe spelers:</strong>
+    <ul>
+        <li>Elke nieuwe unit die je krijgt = <strong>+2 gulden</strong></li>
+        <li>Elke 100 beurten = <strong>+10 gulden</strong></li>
+        <li>Units verdienen inkomen per beurt afhankelijk van hun kracht</li>
+        <li>Roll-knoppen: x1, x10, x100, x1000</li>
+    </ul>
+</div>
+
 <script>
-    // [Naam, kans (%), inkomen per beurt]
     const units = [
         ["Boer", 40, 1],
         ["Middeleeuwse Soldaat", 15, 3],
@@ -74,16 +97,16 @@
         ["Sun Tzu", 0.005, 200000]
     ];
 
-    let inventaris = {};
-    let geld = 100;
-    let beurt = 1;
+    let inventaris = JSON.parse(localStorage.getItem("gameInventory")) || {};
+    let geld = localStorage.getItem("gameMoney") ? parseInt(localStorage.getItem("gameMoney")) : 100;
+    let beurt = localStorage.getItem("gameTurn") ? parseInt(localStorage.getItem("gameTurn")) : 1;
     const rolKosten = 25;
 
     const geldLabel = document.getElementById("geldLabel");
     const beurtLabel = document.getElementById("beurtLabel");
     const inkomenLabel = document.getElementById("inkomenLabel");
     const rolKostenLabel = document.getElementById("rolKostenLabel");
-    const inventarisDiv = document.getElementById("inventarisDiv");
+    const inventarisDiv = document.getElementById("inventory");
     const feedback = document.getElementById("feedback");
     const buttonsDiv = document.getElementById("buttons");
 
@@ -96,17 +119,10 @@
     };
 
     const getUnitInkomen = (name) => {
-        for (let [unitNaam, , inkomen] of units) {
+        for (let [unitNaam,, inkomen] of units) {
             if (unitNaam === name) return inkomen;
         }
         return 0;
-    };
-
-    const getUnitKans = (name) => {
-        for (let [unitNaam, kans] of units) {
-            if (unitNaam === name) return kans;
-        }
-        return "?";
     };
 
     const berekenInkomen = () => {
@@ -122,8 +138,7 @@
         for (let naam in inventaris) {
             const aantal = inventaris[naam];
             const inkomen = getUnitInkomen(naam);
-            const kans = getUnitKans(naam);
-            resultaat += `- ${naam} x${aantal} (⚔️ ${inkomen}/beurt, 🎲 ${kans}%)\n`;
+            resultaat += `- ${naam} x${aantal} (⚔️ ${inkomen}/beurt)\n`;
         }
         return resultaat || "Je hebt nog geen units.";
     };
@@ -140,17 +155,21 @@
 
     const rolActie = (aantal = 1) => {
         const totaleKosten = rolKosten * aantal;
-
         if (geld < totaleKosten) {
             feedback.textContent = `🚫 Niet genoeg geld! (${totaleKosten} nodig)`;
             return;
         }
 
         geld -= totaleKosten;
+        let nieuweUnits = 0;
 
         for (let i = 0; i < aantal; i++) {
             const unit = rolUnit();
-            inventaris[unit] = (inventaris[unit] || 0) + 1;
+            if (!inventaris[unit]) {
+                inventaris[unit] = 0;
+                geld += 2; // nieuwe unit = +2 gulden
+            }
+            inventaris[unit]++;
         }
 
         feedback.textContent = `🎉 Je hebt ${aantal} unit(s) gerold!`;
@@ -161,12 +180,16 @@
         const verdiend = berekenInkomen();
         geld += verdiend;
         beurt++;
-        feedback.textContent = `✅ Je rijk groeit met ${verdiend} geld!`;
-        updateUI();
-    };
 
-    const volgendeBeurtMetDelay = () => {
-        setTimeout(volgendeBeurt, 2000);
+        // elke 100 beurten +10 gulden
+        if (beurt % 100 === 0) {
+            geld += 10;
+            feedback.textContent = `✅ Je rijk groeit met ${verdiend} geld en +10 bonus voor 100 beurten!`;
+        } else {
+            feedback.textContent = `✅ Je rijk groeit met ${verdiend} geld!`;
+        }
+
+        updateUI();
     };
 
     const maakKnop = (label, actie) => {
@@ -180,10 +203,9 @@
     maakKnop("🎲 Rol x10 (250)", () => rolActie(10));
     maakKnop("🎲 Rol x100 (2500)", () => rolActie(100));
     maakKnop("🎲 Rol x1000 (25000)", () => rolActie(1000));
-    maakKnop("➡️ Volgende Beurt", volgendeBeurtMetDelay);
+    maakKnop("➡️ Volgende Beurt", volgendeBeurt);
 
     updateUI();
 </script>
-
 </body>
 </html>
