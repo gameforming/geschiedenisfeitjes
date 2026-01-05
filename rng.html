@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geschiedenis verzamel Game</title>
+    <title>Geschiedenis Verzamel Game</title>
     <style>
         body {
-            font-family: "Verdana", sans-serif;
+            font-family: Verdana, sans-serif;
             background-color: #f4f4f4;
             color: #333;
             padding: 20px;
@@ -49,6 +49,8 @@
 <div id="geldLabel"></div>
 <div id="beurtLabel"></div>
 <div id="inkomenLabel"></div>
+<div id="rolKostenLabel"></div>
+
 <pre id="inventarisDiv"></pre>
 <div id="feedback"></div>
 
@@ -62,13 +64,13 @@
         ["Romeinse Soldaat", 15, 8],
         ["Viking", 8, 15],
         ["Franse Soldaat (Napoleon)", 5, 30],
-        ["Ridde­r", 3, 60],
+        ["Ridder", 3, 60],
         ["Samurai", 2, 120],
         ["Spaanse Conquistador", 1.5, 250],
         ["Romeinse Generaal", 0.8, 500],
         ["Napoleon Bonaparte", 0.3, 2000],
         ["Julius Caesar", 0.15, 5000],
-        ["Alexander de Grote", 0.045, 20000]
+        ["Alexander de Grote", 0.045, 20000],
         ["Sun Tzu", 0.005, 200000]
     ];
 
@@ -80,6 +82,7 @@
     const geldLabel = document.getElementById("geldLabel");
     const beurtLabel = document.getElementById("beurtLabel");
     const inkomenLabel = document.getElementById("inkomenLabel");
+    const rolKostenLabel = document.getElementById("rolKostenLabel");
     const inventarisDiv = document.getElementById("inventarisDiv");
     const feedback = document.getElementById("feedback");
     const buttonsDiv = document.getElementById("buttons");
@@ -88,6 +91,7 @@
         geldLabel.textContent = `💰 Geld: ${geld}`;
         beurtLabel.textContent = `📆 Beurt: ${beurt}`;
         inkomenLabel.textContent = `📈 Macht per beurt: ${berekenInkomen()}`;
+        rolKostenLabel.textContent = `🎲 Roll kost: ${rolKosten} geld per unit`;
         inventarisDiv.textContent = toonInventaris();
     };
 
@@ -96,6 +100,13 @@
             if (unitNaam === name) return inkomen;
         }
         return 0;
+    };
+
+    const getUnitKans = (name) => {
+        for (let [unitNaam, kans] of units) {
+            if (unitNaam === name) return kans;
+        }
+        return "?";
     };
 
     const berekenInkomen = () => {
@@ -112,16 +123,9 @@
             const aantal = inventaris[naam];
             const inkomen = getUnitInkomen(naam);
             const kans = getUnitKans(naam);
-            resultaat += `- ${naam} x${aantal} (⚔️ ${inkomen}/beurt, 🎲 kans: ${kans}%)\n`;
+            resultaat += `- ${naam} x${aantal} (⚔️ ${inkomen}/beurt, 🎲 ${kans}%)\n`;
         }
         return resultaat || "Je hebt nog geen units.";
-    };
-
-    const getUnitKans = (name) => {
-        for (let [unitNaam, kans] of units) {
-            if (unitNaam === name) return kans;
-        }
-        return "?";
     };
 
     const rolUnit = () => {
@@ -135,16 +139,18 @@
     };
 
     const rolActie = (aantal = 1) => {
-        if (geld < rolKosten * aantal) {
-            feedback.textContent = "🚫 Niet genoeg geld!";
+        const totaleKosten = rolKosten * aantal;
+
+        if (geld < totaleKosten) {
+            feedback.textContent = `🚫 Niet genoeg geld! (${totaleKosten} nodig)`;
             return;
         }
-        geld -= rolKosten * aantal;
+
+        geld -= totaleKosten;
 
         for (let i = 0; i < aantal; i++) {
             const unit = rolUnit();
-            if (!inventaris[unit]) inventaris[unit] = 0;
-            inventaris[unit]++;
+            inventaris[unit] = (inventaris[unit] || 0) + 1;
         }
 
         feedback.textContent = `🎉 Je hebt ${aantal} unit(s) gerold!`;
@@ -155,7 +161,7 @@
         const verdiend = berekenInkomen();
         geld += verdiend;
         beurt++;
-        feedback.textContent = `✅ Je rijk groeit met ${verdiend}!`;
+        feedback.textContent = `✅ Je rijk groeit met ${verdiend} geld!`;
         updateUI();
     };
 
@@ -170,10 +176,10 @@
         buttonsDiv.appendChild(btn);
     };
 
-    maakKnop("🎲 Rol x1", () => rolActie(1));
-    maakKnop("🎲 Rol x10", () => rolActie(10));
-    maakKnop("🎲 Rol x100", () => rolActie(100));
-    maakKnop("🎲 Rol x1000", () => rolActie(1000));
+    maakKnop("🎲 Rol x1 (25)", () => rolActie(1));
+    maakKnop("🎲 Rol x10 (250)", () => rolActie(10));
+    maakKnop("🎲 Rol x100 (2500)", () => rolActie(100));
+    maakKnop("🎲 Rol x1000 (25000)", () => rolActie(1000));
     maakKnop("➡️ Volgende Beurt", volgendeBeurtMetDelay);
 
     updateUI();
