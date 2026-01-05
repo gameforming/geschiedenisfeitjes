@@ -162,8 +162,8 @@ const rollAction = (rolls = 1) => {
         inventory[unit] = (inventory[unit] || 0) + 1;
     }
 
-    localStorage.setItem("inventory", JSON.stringify(inventory));
-    localStorage.setItem("geld", money);
+    
+    
     localStorage.setItem("gulden", gulden);
 
     feedback.textContent = `🎉 Je hebt ${rolls} unit(s) gerold!`;
