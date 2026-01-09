@@ -2,7 +2,8 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<title>Mijn Verzameling - geschiedenis feitjes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mijn Verzameling - Geschiedenis</title>
 
 <style>
 body {
@@ -14,6 +15,7 @@ body {
 }
 
 h1 { margin-top: 30px; }
+h2 { margin-bottom: 20px; }
 
 button {
   padding: 14px 26px;
@@ -38,12 +40,6 @@ button {
 .epic { border-left: 6px solid #9b59b6; }
 .legendary { border-left: 6px solid #ff9f1a; }
 .mythic { border-left: 6px solid #ffdd00; }
-
-a {
-  color: #ffeb3b;
-  display: block;
-  margin: 30px;
-}
 </style>
 </head>
 
@@ -58,21 +54,24 @@ a {
 
 <div id="collection"></div>
 
-<a href="index.html">⬅ Terug naar menu</a>
+<a href="games.html">⬅ Terug naar Games</a>
 
 <script>
-/* =====================
-   BASIS OPSLAG
-===================== */
-let gulden = localStorage.getItem("gulden")
-  ? parseInt(localStorage.getItem("gulden"))
-  : 0;
+// ================== STATE + LOCALSTORAGE ==================
 
+// Haal RNG-gulden (macht) op
+let rngGulden = parseInt(localStorage.getItem("rngGulden")) || 0;
+
+// Haal Collection-gulden op
+let storedCollection = parseInt(localStorage.getItem("collectionGulden"));
+
+// Gebruik altijd de bestaande gulden, zo niet neem RNG-gulden
+let collectionGulden = (storedCollection !== null ? storedCollection : rngGulden);
+
+// Haal units op of start met lege object
 let units = JSON.parse(localStorage.getItem("units")) || {};
 
-/* =====================
-   ZELDZAAMHEID VOLGORDE
-===================== */
+// ================== ZELDZAAMHEID VOLGORDE ==================
 const zeldzaamheidVolgorde = {
   common: 1,
   rare: 2,
@@ -81,24 +80,7 @@ const zeldzaamheidVolgorde = {
   mythic: 5
 };
 
-/* =====================
-   VERKOOPWAARDE PER ZELDZAAMHEID
-===================== */
-const sellValues = {
-  common: 5,
-  rare: 10,
-  epic: 30,
-  legendary: 75,
-  mythic: 250
-};
-
-  
-  /* =====================
-   ALLE UNITS
-===================== */
-
-  
-  
+// ================== ALLE UNITS ==================
 const allUnits = [
   { naam: "Holbewoner", zeldzaamheid: "common" },
   { naam: "Romeinse Soldaat", zeldzaamheid: "common" },
@@ -112,20 +94,14 @@ const allUnits = [
   { naam: "Cleopatra", zeldzaamheid: "mythic" }
 ];
 
-/* =====================
-   CRATE KANSEN PER ZELDZAAMHEID
-   voorbeeld:
-   common crate → 70% common, 29% rare, 1% epic
-===================== */
+// ================== CRATE KANSEN ==================
 const crateChances = {
   common: { common: 70, rare: 29, epic: 1 },
   rare: { common: 20, rare: 60, epic: 19, legendary: 1 },
   epic: { rare: 30, epic: 60, legendary: 9, mythic: 1 }
 };
 
-/* =====================
-   HELPER: ROL EEN ZELDZAAMHEID
-===================== */
+// ================== HELPER FUNCTIES ==================
 function rollRarity(crateType) {
   const roll = Math.random() * 100;
   let totaal = 0;
@@ -134,63 +110,43 @@ function rollRarity(crateType) {
     totaal += chances[rarity];
     if (roll <= totaal) return rarity;
   }
-  // fallback
   return Object.keys(chances)[0];
 }
 
-/* =====================
-   KIST OPENEN
-===================== */
 function openCrate(crateType) {
-  let prijs = crateType === 'common' ? 20 : crateType === 'rare' ? 50 : 100;
-  if (gulden < prijs) {
+  const prijs = crateType === 'common' ? 20 : crateType === 'rare' ? 50 : 100;
+  if (collectionGulden < prijs) {
     alert("❌ Niet genoeg gulden!");
     return;
   }
 
-  gulden -= prijs;
-  localStorage.setItem("gulden", gulden);
+  collectionGulden -= prijs;
 
-  // kies zeldzaamheid
   const rarity = rollRarity(crateType);
-
-  // filter units die bij die zeldzaamheid horen
   const possibleUnits = allUnits.filter(u => u.zeldzaamheid === rarity);
-
-  // kies random unit
   const unit = possibleUnits[Math.floor(Math.random() * possibleUnits.length)];
 
   voegUnitToe(unit);
   updateUI();
+  save();
 }
 
-/* =====================
-   UNIT TOEVOEGEN
-===================== */
 function voegUnitToe(unit) {
   if (!units[unit.naam]) {
-    units[unit.naam] = {
-      aantal: 0,
-      zeldzaamheid: unit.zeldzaamheid
-    };
+    units[unit.naam] = { aantal: 0, zeldzaamheid: unit.zeldzaamheid };
   }
   units[unit.naam].aantal++;
-  localStorage.setItem("units", JSON.stringify(units));
 }
 
-/* =====================
-   INTERFACE BIJWERKEN
-===================== */
+// ================== UI ==================
 function updateUI() {
-  document.getElementById("guldenDisplay").innerText = gulden;
+  document.getElementById("guldenDisplay").innerText = collectionGulden;
   const container = document.getElementById("collection");
   container.innerHTML = "";
 
   Object.entries(units)
-    .sort((a, b) =>
-      zeldzaamheidVolgorde[b[1].zeldzaamheid] - zeldzaamheidVolgorde[a[1].zeldzaamheid]
-    )
-    .forEach(([naam, data]) => {
+    .sort((a,b) => zeldzaamheidVolgorde[b[1].zeldzaamheid] - zeldzaamheidVolgorde[a[1].zeldzaamheid])
+    .forEach(([naam,data]) => {
       container.innerHTML += `
         <div class="unit ${data.zeldzaamheid}">
           <b>${naam}</b><br>
@@ -201,6 +157,15 @@ function updateUI() {
     });
 }
 
+// ================== LOCALSTORAGE OPSLAAN ==================
+function save() {
+  localStorage.setItem("collectionGulden", collectionGulden);
+  localStorage.setItem("units", JSON.stringify(units));
+  // sync met RNG-gulden zodat beide hetzelfde zijn
+  localStorage.setItem("rngGulden", collectionGulden);
+}
+
+// ================== INIT ==================
 updateUI();
 </script>
 
