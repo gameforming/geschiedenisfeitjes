@@ -46,7 +46,6 @@ div {
 
 <h1>🏺 Geschiedenis Units</h1>
 
-<div id="geldLabel"></div>
 <div id="guldenLabel"></div>
 <div id="turnLabel"></div>
 <div id="inkomenLabel"></div>
@@ -57,6 +56,11 @@ div {
 <div id="buttons"></div>
 
 <script>
+// =================================================
+// ⚠️ RESET LOCALSTORAGE BIJ ELKE START (BEWUST)
+// =================================================
+localStorage.clear();
+
 // ================== DATA ==================
 const unitsList = [
     ["Romeinse Soldaat", 60, 1],
@@ -73,17 +77,15 @@ const unitsList = [
     ["Willem de Veroveraar", 0.01, 10000]
 ];
 
-let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
-let money = parseInt(localStorage.getItem("geld")) || 100;
-let gulden = parseInt(localStorage.getItem("gulden")) || 0;
-let turn = parseInt(localStorage.getItem("turn")) || 1;
+let inventory = {};
+let gulden = 100;
+let turn = 1;
 
 const rollCost = 25;
 const PAYOUT_INTERVAL = 10;
 let timeLeft = PAYOUT_INTERVAL;
 
 // ================== ELEMENTEN ==================
-const moneyLabel = document.getElementById("geldLabel");
 const guldenLabel = document.getElementById("guldenLabel");
 const turnLabel = document.getElementById("turnLabel");
 const incomeLabel = document.getElementById("inkomenLabel");
@@ -94,10 +96,9 @@ const buttonsDiv = document.getElementById("buttons");
 
 // ================== FUNCTIES ==================
 const updateUI = () => {
-    moneyLabel.textContent = `💰 Geld: ${money}`;
     guldenLabel.textContent = `🪙 Gulden: ${gulden}`;
-    turnLabel.textContent = `📆 Beurt: ${turn}`;
-    incomeLabel.textContent = `💰 Inkomen per payout: ${calculateIncome()}`;
+    turnLabel.textContent = `📆 Payouts: ${turn}`;
+    incomeLabel.textContent = `🪙 Inkomen per payout: ${calculateIncome()}`;
     timerLabel.textContent = `⏳ Volgende payout over: ${timeLeft}s`;
     inventarisDiv.textContent = showInventory();
 };
@@ -127,7 +128,7 @@ const calculateIncome = () => {
 const showInventory = () => {
     let result = "";
     for (let name in inventory) {
-        result += `- ${name} x${inventory[name]} (💰 ${getUnitIncome(name)} / payout, 🎲 ${getUnitChance(name)}%)\n`;
+        result += `- ${name} x${inventory[name]} (🪙 ${getUnitIncome(name)} / payout, 🎲 ${getUnitChance(name)}%)\n`;
     }
     return result || "Je hebt nog geen units!";
 };
@@ -144,27 +145,21 @@ const rollUnit = () => {
 
 const rollAction = (rolls = 1) => {
     const totalCost = rollCost * rolls;
-    if (money < totalCost) {
-        feedback.textContent = `🚫 Niet genoeg geld! (${totalCost} nodig)`;
+    if (gulden < totalCost) {
+        feedback.textContent = `🚫 Niet genoeg gulden! (${totalCost} nodig)`;
         return;
     }
 
-    money -= totalCost;
+    gulden -= totalCost;
 
     for (let i = 0; i < rolls; i++) {
         const unit = rollUnit();
         const isNew = !inventory[unit];
 
-        if (isNew) {
-            gulden += 2; // ✅ gulden, geen geld
-        }
+        if (isNew) gulden += 2;
 
         inventory[unit] = (inventory[unit] || 0) + 1;
     }
-
-    
-    
-    localStorage.setItem("gulden", gulden);
 
     feedback.textContent = `🎉 Je hebt ${rolls} unit(s) gerold!`;
     updateUI();
@@ -175,15 +170,9 @@ setInterval(() => {
     timeLeft--;
     if (timeLeft <= 0) {
         const earned = calculateIncome();
-        money += earned;
+        gulden += earned;
         turn++;
-
-        if (turn % 100 === 0) money += 10;
-
-        localStorage.setItem("geld", money);
-        localStorage.setItem("turn", turn);
-
-        feedback.textContent = `💸 Payout ontvangen: +${earned} geld`;
+        feedback.textContent = `💸 Payout ontvangen: +${earned} gulden`;
         timeLeft = PAYOUT_INTERVAL;
     }
     updateUI();
