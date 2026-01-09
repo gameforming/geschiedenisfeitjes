@@ -2,65 +2,45 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Geschiedenis RNG</title>
+<title>GES RNG</title>
 <style>
 body {
     font-family: Verdana, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
+    background: #f4f4f4;
     padding: 20px;
     max-width: 800px;
     margin: auto;
+    text-align: center;
 }
 button {
-    background-color: #007BFF;
-    border: none;
-    color: white;
     padding: 10px 15px;
     margin: 5px;
-    border-radius: 5px;
-    cursor: pointer;
     font-size: 16px;
-}
-button:hover {
-    background-color: #0056b3;
+    cursor: pointer;
 }
 pre {
-    background-color: #eaeaea;
+    background: #eee;
     padding: 10px;
-    border-radius: 5px;
-    font-size: 16px;
+    text-align: left;
 }
-div {
-    margin: 8px 0;
-    font-size: 18px;
-}
-#feedback {
-    font-weight: bold;
-    color: green;
-}
+#feedback { font-weight: bold; margin-top: 10px; }
 </style>
 </head>
 <body>
 
-<h1>🏺 Geschiedenis Units</h1>
+<h1>🎲 GES RNG</h1>
 
-<div id="guldenLabel"></div>
-<div id="turnLabel"></div>
-<div id="inkomenLabel"></div>
+<div id="moneyLabel"></div>
+<div id="collectionLabel"></div>
 <div id="timerLabel"></div>
-
-<pre id="inventarisDiv"></pre>
+<pre id="inventory"></pre>
 <div id="feedback"></div>
+
 <div id="buttons"></div>
 
-<script>
-// =================================================
-// ⚠️ RESET LOCALSTORAGE BIJ ELKE START (BEWUST)
-// =================================================
-localStorage.clear();
+<a href="collection.html">➡ Collection</a>
 
+<script>
 // ================== DATA ==================
 const unitsList = [
     ["Romeinse Soldaat", 60, 1],
@@ -77,63 +57,43 @@ const unitsList = [
     ["Willem de Veroveraar", 0.01, 10000]
 ];
 
-let inventory = {};
-let gulden = 100;
-let turn = 1;
+// ================== STATE ==================
+let inventory = JSON.parse(localStorage.getItem("rngInventory")) || {};
+let gameMoney = parseInt(localStorage.getItem("gameMoney")) || 100;
+let collectionGulden = parseInt(localStorage.getItem("collectionGulden")) || 0;
 
 const rollCost = 25;
 const PAYOUT_INTERVAL = 10;
 let timeLeft = PAYOUT_INTERVAL;
 
-// ================== ELEMENTEN ==================
-const guldenLabel = document.getElementById("guldenLabel");
-const turnLabel = document.getElementById("turnLabel");
-const incomeLabel = document.getElementById("inkomenLabel");
+// ================== UI ==================
+const moneyLabel = document.getElementById("moneyLabel");
+const collectionLabel = document.getElementById("collectionLabel");
 const timerLabel = document.getElementById("timerLabel");
-const inventarisDiv = document.getElementById("inventarisDiv");
+const inventoryDiv = document.getElementById("inventory");
 const feedback = document.getElementById("feedback");
 const buttonsDiv = document.getElementById("buttons");
 
-// ================== FUNCTIES ==================
-const updateUI = () => {
-    guldenLabel.textContent = `🪙 Gulden: ${gulden}`;
-    turnLabel.textContent = `📆 Payouts: ${turn}`;
-    incomeLabel.textContent = `🪙 Inkomen per payout: ${calculateIncome()}`;
-    timerLabel.textContent = `⏳ Volgende payout over: ${timeLeft}s`;
-    inventarisDiv.textContent = showInventory();
-};
+function updateUI() {
+    moneyLabel.innerText = "💰 Game Money: " + gameMoney;
+    collectionLabel.innerText = "🪙 Collection Gulden: " + collectionGulden;
+    timerLabel.innerText = "⏳ Volgende payout over: " + timeLeft + "s";
 
-const getUnitIncome = (name) => {
+    inventoryDiv.innerText =
+        Object.keys(inventory).length
+        ? Object.entries(inventory).map(u => `- ${u[0]} x${u[1]} (💰 ${getIncome(u[0])})`).join("\n")
+        : "Nog geen units";
+}
+
+// ================== FUNCTIES ==================
+function getIncome(name) {
     for (let [unitName, , income] of unitsList) {
         if (unitName === name) return income;
     }
     return 0;
-};
+}
 
-const getUnitChance = (name) => {
-    for (let [unitName, chance] of unitsList) {
-        if (unitName === name) return chance;
-    }
-    return "?";
-};
-
-const calculateIncome = () => {
-    let total = 0;
-    for (let unit in inventory) {
-        total += getUnitIncome(unit) * inventory[unit];
-    }
-    return total;
-};
-
-const showInventory = () => {
-    let result = "";
-    for (let name in inventory) {
-        result += `- ${name} x${inventory[name]} (🪙 ${getUnitIncome(name)} / payout, 🎲 ${getUnitChance(name)}%)\n`;
-    }
-    return result || "Je hebt nog geen units!";
-};
-
-const rollUnit = () => {
+function rollUnit() {
     const roll = Math.random() * 100;
     let total = 0;
     for (let [name, chance] of unitsList) {
@@ -141,58 +101,66 @@ const rollUnit = () => {
         if (roll <= total) return name;
     }
     return unitsList[0][0];
-};
+}
 
-const rollAction = (rolls = 1) => {
-    const totalCost = rollCost * rolls;
-    if (gulden < totalCost) {
-        feedback.textContent = `🚫 Niet genoeg gulden! (${totalCost} nodig)`;
+function roll(times) {
+    const totalCost = rollCost * times;
+    if (gameMoney < totalCost) {
+        feedback.innerText = `❌ Niet genoeg game money! (${totalCost} nodig)`;
         return;
     }
 
-    gulden -= totalCost;
+    gameMoney -= totalCost;
 
-    for (let i = 0; i < rolls; i++) {
+    for (let i = 0; i < times; i++) {
         const unit = rollUnit();
         const isNew = !inventory[unit];
-
-        if (isNew) gulden += 2;
-
+        if (isNew) collectionGulden += 2; // Beloning voor Collection
         inventory[unit] = (inventory[unit] || 0) + 1;
     }
 
-    feedback.textContent = `🎉 Je hebt ${rolls} unit(s) gerold!`;
+    feedback.innerText = `🎉 Je hebt ${times} unit(s) gerold!`;
+    save();
     updateUI();
-};
+}
 
-// ================== AUTOMATISCHE PAYOUT ==================
+function payout() {
+    let earned = 0;
+    for (let unit in inventory) earned += getIncome(unit) * inventory[unit];
+    gameMoney += earned;
+    feedback.innerText = `💸 Je kreeg ${earned} game money als payout!`;
+    save();
+}
+
+// ================== SAVE ==================
+function save() {
+    localStorage.setItem("rngInventory", JSON.stringify(inventory));
+    localStorage.setItem("gameMoney", gameMoney);
+    localStorage.setItem("collectionGulden", collectionGulden);
+}
+
+// ================== TIMER ==================
 setInterval(() => {
     timeLeft--;
     if (timeLeft <= 0) {
-        const earned = calculateIncome();
-        gulden += earned;
-        turn++;
-        feedback.textContent = `💸 Payout ontvangen: +${earned} gulden`;
+        payout();
         timeLeft = PAYOUT_INTERVAL;
     }
     updateUI();
 }, 1000);
 
-// ================== BUTTONS ==================
-const createButton = (label, callback) => {
+// ================== KNOPPEN ==================
+function createButton(label, times) {
     const btn = document.createElement("button");
-    btn.textContent = label;
-    btn.onclick = callback;
+    btn.innerText = label;
+    btn.onclick = () => roll(times);
     buttonsDiv.appendChild(btn);
-};
+}
 
-createButton("🎲 Roll x1", () => rollAction(1));
-createButton("🎲 Roll x10", () => rollAction(10));
-createButton("🎲 Roll x100", () => rollAction(100));
-createButton("🎲 Roll x1000", () => rollAction(1000));
-createButton("⬅ Terug naar Games", () => {
-    window.location.href = "games.html";
-});
+createButton("🎲 Roll x1", 1);
+createButton("🎲 Roll x10", 10);
+createButton("🎲 Roll x100", 100);
+createButton("🎲 Roll x1000", 1000);
 
 updateUI();
 </script>
